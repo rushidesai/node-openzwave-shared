@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015-1016 Elias Karakoulakis <elias.karakoulakis@gmail.com>
+* Copyright (c) 2015-2017 Elias Karakoulakis <elias.karakoulakis@gmail.com>
 *
 * Permission to use, copy, modify, and distribute this software for any
 * purpose with or without fee is hereby granted, provided that the above
@@ -61,6 +61,7 @@ namespace OZW {
 
   //extern Handle<Object>	context_obj;
   extern Nan::Callback *emit_cb;
+  extern Nan::CopyablePersistentTraits<v8::Object>::CopyablePersistent ctx_obj;
 
   /*
   * uv_async to let the OpenZWave callback wake up the main V8 thread

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015-1016 Elias Karakoulakis <elias.karakoulakis@gmail.com>
+* Copyright (c) 2015-2017 Elias Karakoulakis <elias.karakoulakis@gmail.com>
 *
 * Permission to use, copy, modify, and distribute this software for any
 * purpose with or without fee is hereby granted, provided that the above
@@ -38,7 +38,7 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		bool doSecurity = info.Length() > 0 && info[0]->ToBoolean()->Value();
+		bool doSecurity = info.Length() > 0 && Nan::To<Boolean>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->AddNode(homeid, doSecurity)
 		));
@@ -73,7 +73,8 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->RemoveFailedNode(homeid, nodeid)
 		));
@@ -91,7 +92,8 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->HasNodeFailed(homeid, nodeid)
 		));
@@ -106,7 +108,8 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->RequestNodeNeighborUpdate(homeid, nodeid)
 		));
@@ -121,7 +124,8 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->AssignReturnRoute(homeid, nodeid)
 		));
@@ -137,7 +141,8 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->DeleteAllReturnRoutes(homeid, nodeid)
 		));
@@ -152,7 +157,8 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->SendNodeInformation(homeid, nodeid)
 		));
@@ -199,7 +205,8 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->ReplaceFailedNode(homeid, nodeid)
 		));
@@ -227,7 +234,8 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->RequestNetworkUpdate(homeid, nodeid)
 		));
@@ -241,7 +249,8 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->ReplicationSend(homeid, nodeid)
 		));
@@ -255,8 +264,9 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 btnid = info[1]->ToNumber()->Value();
+		CheckMinArgs(2, "nodeid, buttonid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		uint8 btnid = Nan::To<Number>(info[1]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->CreateButton(homeid, nodeid, btnid)
 		));
@@ -270,8 +280,9 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 btnid = info[1]->ToNumber()->Value();
+		CheckMinArgs(2, "nodeid, buttonid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		uint8 btnid = Nan::To<Number>(info[1]).ToLocalChecked()->Value();
 		info.GetReturnValue().Set(Nan::New<Boolean>(
 			OpenZWave::Manager::Get()->DeleteButton(homeid, nodeid, btnid)
 		));
@@ -287,17 +298,17 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		std::string ctrcmd = (*String::Utf8Value(info[0]->ToString()));
+		CheckMinArgs(1, "command");
+		std::string ctrcmd = (*String::Utf8Value(Nan::To<String>(info[0]).ToLocalChecked()));
 		uint8 nodeid1 = 0xff;
 		uint8 nodeid2 = 0;
 		bool highpower = false;
 		if (info.Length() > 1) {
-			highpower = info[1]->ToBoolean()->Value();
+			highpower = Nan::To<Boolean>(info[1]).ToLocalChecked()->Value();
 			if (info.Length() > 2) {
-				nodeid1 = info[2]->ToNumber()->Value();
+				nodeid1 = Nan::To<Number>(info[2]).ToLocalChecked()->Value();
 				if (info.Length() > 3) {
-					nodeid2 = info[3]->ToNumber()->Value();
+					nodeid2 = Nan::To<Number>(info[3]).ToLocalChecked()->Value();
 				}
 			}
 		}
@@ -387,26 +398,27 @@ namespace OZW {
 	// =================================================================
 	{
 		Nan::HandleScope scope;
+		CheckMinArgs(1, "nodeid");
 		OpenZWave::Node::NodeData data;
-		if (info.Length() > 0) {
-			uint8 nodeid = info[0]->ToNumber()->Value();
-			OpenZWave::Manager::Get()->GetNodeStatistics(homeid, nodeid, &data);
-			Local <Object> stats = Nan::New<Object>();
-			AddIntegerProp(stats, sentCnt, data.m_sentCnt);
-			AddIntegerProp(stats, sentFailed, data.m_sentFailed);
-			AddIntegerProp(stats, retries, data.m_retries);
-			AddIntegerProp(stats, receivedCnt, data.m_receivedCnt);
-			AddIntegerProp(stats, receivedDups, data.m_receivedDups);
-			AddIntegerProp(stats, receivedUnsolicited, data.m_receivedUnsolicited);
-			AddIntegerProp(stats, lastRequestRTT, data.m_lastRequestRTT);
-			AddIntegerProp(stats, lastResponseRTT, data.m_lastResponseRTT);
-			AddIntegerProp(stats, averageRequestRTT, data.m_averageRequestRTT);
-			AddIntegerProp(stats, averageResponseRTT, data.m_averageResponseRTT);
-			AddIntegerProp(stats, quality, data.m_quality);
-			AddStringProp(stats, sentTS, data.m_sentTS);
-			AddStringProp(stats, receivedTS, data.m_receivedTS);
-			info.GetReturnValue().Set(stats);
-		}
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+
+		OpenZWave::Manager::Get()->GetNodeStatistics(homeid, nodeid, &data);
+
+		Local <Object> stats = Nan::New<Object>();
+		AddIntegerProp(stats, sentCnt, data.m_sentCnt);
+		AddIntegerProp(stats, sentFailed, data.m_sentFailed);
+		AddIntegerProp(stats, retries, data.m_retries);
+		AddIntegerProp(stats, receivedCnt, data.m_receivedCnt);
+		AddIntegerProp(stats, receivedDups, data.m_receivedDups);
+		AddIntegerProp(stats, receivedUnsolicited, data.m_receivedUnsolicited);
+		AddIntegerProp(stats, lastRequestRTT, data.m_lastRequestRTT);
+		AddIntegerProp(stats, lastResponseRTT, data.m_lastResponseRTT);
+		AddIntegerProp(stats, averageRequestRTT, data.m_averageRequestRTT);
+		AddIntegerProp(stats, averageResponseRTT, data.m_averageResponseRTT);
+		AddIntegerProp(stats, quality, data.m_quality);
+		AddStringProp(stats, sentTS, data.m_sentTS);
+		AddStringProp(stats, receivedTS, data.m_receivedTS);
+		info.GetReturnValue().Set(stats);
 	}
 
 //namespace OZW

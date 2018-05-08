@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2013 Jonathan Perkin <jonathan@perkin.org.uk>
-* Copyright (c) 2015-1016 Elias Karakoulakis <elias.karakoulakis@gmail.com>
+* Copyright (c) 2015-2017 Elias Karakoulakis <elias.karakoulakis@gmail.com>
 *
 * Permission to use, copy, modify, and distribute this software for any
 * purpose with or without fee is hereby granted, provided that the above
@@ -48,36 +48,29 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint32 intervalMillisecs = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "intervalMillisecs");
+		uint32 intervalMillisecs = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		OpenZWave::Manager::Get()->SetPollInterval (intervalMillisecs, false);
 	}
 
-
 	/*
-	* Enable/Disable polling on a COMMAND_CLASS basis.
+	* Enable/Disable polling on a ValueID
 	*/
 	// ===================================================================
 	NAN_METHOD(OZW::EnablePoll)
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
+		CheckMinArgs(2, "valueId_object, intensity");
+		OpenZWave::ValueID* vit = populateValueId(info);
+		bool b = false;
+		if (vit) {
+			uint8 idxpos  =  (info[0]->IsObject()) ? 1 : 4;
+			uint8 intensity = Nan::To<Number>(info[idxpos]).ToLocalChecked()->Value();
 
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 comclass = info[1]->ToNumber()->Value();
-		uint8 intensity = (info.Length() > 2) ? info[2]->ToNumber()->Value() : 1;
-
-		NodeInfo *node;
-		std::list<OpenZWave::ValueID>::iterator vit;
-
-		if ((node = get_node_info(nodeid))) {
-			for (vit = node->values.begin(); vit != node->values.end(); ++vit) {
-				if ((*vit).GetCommandClassId() == comclass) {
-					OpenZWave::Manager::Get()->EnablePoll((*vit), intensity);
-					break;
-				}
-			}
+			b = OpenZWave::Manager::Get()->EnablePoll((*vit), intensity);
 		}
+		info.GetReturnValue().Set(Nan::New<Boolean>(b));
 	}
 
 	// ===================================================================
@@ -85,20 +78,13 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 comclass = info[1]->ToNumber()->Value();
-		NodeInfo *node;
-		std::list<OpenZWave::ValueID>::iterator vit;
-
-		if ((node = get_node_info(nodeid))) {
-			for (vit = node->values.begin(); vit != node->values.end(); ++vit) {
-				if ((*vit).GetCommandClassId() == comclass) {
-					OpenZWave::Manager::Get()->DisablePoll((*vit));
-					break;
-				}
-			}
+		CheckMinArgs(1, "valueId");
+		OpenZWave::ValueID* vit = populateValueId(info);
+		bool b = false;
+		if (vit) {
+			b = OpenZWave::Manager::Get()->DisablePoll((*vit));
 		}
+		info.GetReturnValue().Set(Nan::New<Boolean>(b));
 	}
 
 	// Determine the polling of a device's state.
@@ -107,10 +93,9 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
+		CheckMinArgs(1, "valueId");
 		OpenZWave::ValueID* ozwvid = populateValueId(info);
-		if (ozwvid == NULL) {
-			Nan::ThrowTypeError("OpenZWave valueId not found");
-		} else {
+		if (ozwvid) {
 			bool b = OpenZWave::Manager::Get()->isPolled(*ozwvid);
 			info.GetReturnValue().Set(Nan::New<Boolean>(b));
 		}
@@ -121,13 +106,12 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
+		CheckMinArgs(1, "valueId");
 		OpenZWave::ValueID* ozwvid = populateValueId(info);
 		uint8 intensity;
-		if (ozwvid == NULL) {
-			Nan::ThrowTypeError("OpenZWave valueId not found");
-		} else {
+		if (ozwvid) {
 			uint8 intensity_index = ( info[0]->IsObject() ) ? 1 : 4;
-			intensity = info[intensity_index]->ToNumber()->Value();
+			intensity = Nan::To<Number>(info[intensity_index]).ToLocalChecked()->Value();
 			OpenZWave::Manager::Get()->SetPollIntensity (*ozwvid, intensity);
 		}
 	}
@@ -138,10 +122,9 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
+		CheckMinArgs(1, "valueId");
 		OpenZWave::ValueID* ozwvid = populateValueId(info);
-		if (ozwvid == NULL) {
-			Nan::ThrowTypeError("OpenZWave valueId not found");
-		} else {
+		if (ozwvid) {
 			uint8 i = OpenZWave::Manager::Get()->GetPollIntensity(*ozwvid);
 			info.GetReturnValue().Set(Nan::New<Integer>(i));
 		}

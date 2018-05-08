@@ -1,3 +1,5 @@
+.cproject
+.project
 *.diff
 *.swo
 *.swp
@@ -7,3 +9,4 @@ build
 zwcfg*
 zwscene.xml
 node_modules
+.idea

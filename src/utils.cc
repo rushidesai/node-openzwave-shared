@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2013 Jonathan Perkin <jonathan@perkin.org.uk>
-* Copyright (c) 2013 Elias Karakoulakis <elias.karakoulakis@gmail.com>
+* Copyright (c) 2015-2017 Elias Karakoulakis <elias.karakoulakis@gmail.com>
 *
 * Permission to use, copy, modify, and distribute this software for any
 * purpose with or without fee is hereby granted, provided that the above
@@ -57,8 +57,19 @@ namespace OZW {
 		return NULL;
 	}
 
+	std::string getValueIdDescriptor(OpenZWave::ValueID value) {
+		char buffer[32];
+		sprintf(buffer, "%d-%d-%d-%d", value.GetNodeId(), value.GetCommandClassId(), value.GetInstance(), value.GetIndex());
+		return std::string(buffer);
+	}
+	std::string getValueIdDescriptor(uint8 node_id, uint8 class_id, uint8 instance, uint8 index) {
+		char buffer[32];
+		sprintf(buffer, "%d-%d-%d-%d", node_id, class_id, instance, index);
+		return std::string(buffer);
+	}
+
 	// populate a v8 object with an attribute called 'value' whose value is the
-	// ZWave value, as returned from its proper typed call
+	// ZWave value, as returned from its proper typed call.
 	void setValObj(Local<Object>&valobj, OpenZWave::ValueID &value) {
 		/*
 		* The value itself is type-specific.
@@ -137,10 +148,67 @@ namespace OZW {
 		}
 	}
 
+	// populate a v8 object with an attribute called 'value' whose value is the
+	// SCENE value (not the current one!) - as returned from its proper typed call
+	// (using Manager::SceneGetValueAsXXX calls)
+	void setSceneValObj(uint8 sceneid, Local<Object>&valobj, OpenZWave::ValueID &value) {
+		/*
+		* The value itself is type-specific.
+		*/
+		switch (value.GetType()) {
+			case OpenZWave::ValueID::ValueType_Bool: {
+				bool val;
+				OpenZWave::Manager::Get()->SceneGetValueAsBool(sceneid, value, &val);
+				AddBooleanProp(valobj, value, val);
+				break;
+			}
+			case OpenZWave::ValueID::ValueType_Byte: {
+				uint8 val;
+				OpenZWave::Manager::Get()->SceneGetValueAsByte(sceneid, value, &val);
+				AddIntegerProp(valobj, value, val);
+				break;
+			}
+			case OpenZWave::ValueID::ValueType_Decimal: {
+				std::string val;
+				OpenZWave::Manager::Get()->SceneGetValueAsString(sceneid, value, &val);
+				AddStringProp(valobj, value, val);
+				break;
+			}
+			case OpenZWave::ValueID::ValueType_Int: {
+				int32 val;
+				OpenZWave::Manager::Get()->SceneGetValueAsInt(sceneid, value, &val);
+				AddIntegerProp(valobj, value, val);
+				break;
+			}
+			case OpenZWave::ValueID::ValueType_Short: {
+				int16 val;
+				OpenZWave::Manager::Get()->SceneGetValueAsShort(sceneid, value, &val);
+				AddIntegerProp(valobj, value, val);
+				break;
+			}
+			case OpenZWave::ValueID::ValueType_String: {
+				std::string val;
+				OpenZWave::Manager::Get()->SceneGetValueAsString(sceneid, value, &val);
+				AddStringProp(valobj, value, val.c_str())
+				break;
+			}
+			/*
+			* Buttons, Schedules, Lists and Raw do not have a SceneGetValue extractor.
+			*/
+			case OpenZWave::ValueID::ValueType_Button:
+			case OpenZWave::ValueID::ValueType_Schedule:
+			case OpenZWave::ValueID::ValueType_List:
+			case OpenZWave::ValueID::ValueType_Raw: {
+				fprintf(stderr, "unsupported scene value type: 0x%x\n", value.GetType());
+				break;
+			}
+		}
+	}
+
 	// populate a v8 Object with useful information about a ZWave node
 	void populateNode(
-			v8::Local<v8::Object>& nodeobj,
-			uint32 homeid, uint8 nodeid
+		v8::Local<v8::Object>& nodeobj,
+		uint32 homeid, uint8 nodeid
 	) {
 		OpenZWave::Manager *mgr = OpenZWave::Manager::Get();
 		AddStringProp(nodeobj, manufacturer, mgr->GetNodeManufacturerName(homeid, nodeid).c_str());
@@ -156,8 +224,7 @@ namespace OZW {
 	void populateValueId(v8::Local<v8::Object>& nodeobj, OpenZWave::ValueID value) {
 		Nan::EscapableHandleScope handle_scope;
 		OpenZWave::Manager *mgr = OpenZWave::Manager::Get();
-		char buffer[15];
-		sprintf(buffer, "%d-%d-%d-%d", value.GetNodeId(), value.GetCommandClassId(), value.GetInstance(), value.GetIndex());
+		std::string buffer = getValueIdDescriptor(value);
 		/*
 		* Common value types.
 		*/
@@ -165,7 +232,7 @@ namespace OZW {
 		//Nan::Set(valobj, Nan::New<String>("id"), Nan::New<Integer>(value.GetId()));
 		//Nan::Set(valobj, Nan::New<String>("change_verified").ToLocalChecked(), Nan::New<Boolean>(mgr->GetChangeVerified(value))->ToBoolean());
 		//
-		AddStringProp(nodeobj,  value_id,  buffer);
+		AddStringProp(nodeobj,  value_id,  buffer.c_str());
 		AddIntegerProp(nodeobj, node_id,   value.GetNodeId());
 		AddIntegerProp(nodeobj, class_id,  value.GetCommandClassId());
 		AddStringProp (nodeobj, type,      OpenZWave::Value::GetTypeNameFromEnum(value.GetType()));
@@ -188,7 +255,7 @@ namespace OZW {
 		Local <Object> valobj = Nan::New<Object>();
 		populateValueId(valobj, value);
 		setValObj(valobj, value);
-  	return handle_scope.Escape(valobj);
+		return handle_scope.Escape(valobj);
 	}
 
 	// create a V8 object from a ZWave scene value
@@ -196,15 +263,16 @@ namespace OZW {
 		Nan::EscapableHandleScope handle_scope;
 		Local <Object> valobj =  Nan::New<Object>();
 		populateValueId(valobj, value);
-		setValObj(valobj, value);
+		setSceneValObj(sceneId, valobj, value);
 		return handle_scope.Escape(valobj);
 	}
 
-  bool isOzwValue(Local<Object>& o) {
-		return (!Nan::HasOwnProperty(o, Nan::New<String>("node_id").ToLocalChecked()).IsNothing()
-			&& !Nan::HasOwnProperty(o, Nan::New<String>("class_id").ToLocalChecked()).IsNothing()
-			&& !Nan::HasOwnProperty(o, Nan::New<String>("instance").ToLocalChecked()).IsNothing()
-			&& !Nan::HasOwnProperty(o, Nan::New<String>("index").ToLocalChecked()).IsNothing());
+	bool isOzwValue(Local<Object>& o) {
+		return (Nan::HasOwnProperty(o, Nan::New<String>("node_id").ToLocalChecked()).FromJust()
+			&& Nan::HasOwnProperty(o, Nan::New<String>("class_id").ToLocalChecked()).FromJust()
+			&& Nan::HasOwnProperty(o, Nan::New<String>("instance").ToLocalChecked()).FromJust()
+			&& Nan::HasOwnProperty(o, Nan::New<String>("index").ToLocalChecked()).FromJust()
+		);
 	}
 
   /* get the ZWave ValueID from the arguments passed to a node.js function,
@@ -220,23 +288,33 @@ namespace OZW {
 	OpenZWave::ValueID* populateValueId(const Nan::FunctionCallbackInfo<v8::Value> &info, uint8 offset) {
 		uint8 nodeid, comclass, instance, index;
 		if ( (info.Length() >= offset) && info[offset]->IsObject() ) {
-			Local<Object> o = info[offset]->ToObject();
+			Local<Object> o = Nan::To<Object>(info[offset]).ToLocalChecked();
 			if (isOzwValue(o)) {
-				nodeid   = Nan::Get(o, Nan::New<String>("node_id").ToLocalChecked()).ToLocalChecked()->ToNumber()->Value();
-				comclass = Nan::Get(o, Nan::New<String>("class_id").ToLocalChecked()).ToLocalChecked()->ToNumber()->Value();
-				instance = Nan::Get(o, Nan::New<String>("instance").ToLocalChecked()).ToLocalChecked()->ToNumber()->Value();
-				index    = Nan::Get(o, Nan::New<String>("index").ToLocalChecked()).ToLocalChecked()->ToNumber()->Value();
+				nodeid   = Nan::To<Number>(Nan::Get(o, Nan::New<String>("node_id").ToLocalChecked()).ToLocalChecked()).ToLocalChecked()->Value();
+				comclass = Nan::To<Number>(Nan::Get(o, Nan::New<String>("class_id").ToLocalChecked()).ToLocalChecked()).ToLocalChecked()->Value();
+				instance = Nan::To<Number>(Nan::Get(o, Nan::New<String>("instance").ToLocalChecked()).ToLocalChecked()).ToLocalChecked()->Value();
+				index    = Nan::To<Number>(Nan::Get(o, Nan::New<String>("index").ToLocalChecked()).ToLocalChecked()).ToLocalChecked()->Value();
 			} else {
-				return ( NULL );
+				std::string errmsg("OpenZWave valueId object not found: ");
+				Nan::JSON NanJSON;
+				Nan::MaybeLocal<v8::String> result = NanJSON.Stringify(o);
+				if (!result.IsEmpty()) {
+  				v8::Local<v8::String> stringified = result.ToLocalChecked();
+					errmsg += *Nan::Utf8String(stringified);
+				}
+				Nan::ThrowTypeError(errmsg.c_str());
+				return (NULL);
 			}
 		} else if ((info.Length() >= offset+4)) {
 			// legacy mode
-			nodeid   = info[offset]->ToNumber()->Value();
-			comclass = info[offset+1]->ToNumber()->Value();
-			instance = info[offset+2]->ToNumber()->Value();
-			index    = info[offset+3]->ToNumber()->Value();
+			nodeid   = Nan::To<Number>(info[offset]).ToLocalChecked()->Value();
+			comclass = Nan::To<Number>(info[offset+1]).ToLocalChecked()->Value();
+			instance = Nan::To<Number>(info[offset+2]).ToLocalChecked()->Value();
+			index    = Nan::To<Number>(info[offset+3]).ToLocalChecked()->Value();
 		} else {
-			return( NULL );
+			std::string errmsg("OpenZWave valueId not found. Pass either a JS object with {node_id, class_id, instance, index} or the raw values in this order.");
+			Nan::ThrowTypeError(errmsg.c_str());
+			return (NULL);
 		}
 
 		NodeInfo *node = NULL;
@@ -249,6 +327,10 @@ namespace OZW {
 				}
 			}
 		}
+		std::string errmsg(
+			std::string("OpenZWave valueId not found: ") +
+			getValueIdDescriptor(nodeid, comclass, instance, index));
+		Nan::ThrowTypeError(errmsg.c_str());
 		return( NULL );
 	}
 

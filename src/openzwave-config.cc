@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2013 Jonathan Perkin <jonathan@perkin.org.uk>
-* Copyright (c) 2015-1016 Elias Karakoulakis <elias.karakoulakis@gmail.com>
+* Copyright (c) 2015-2017 Elias Karakoulakis <elias.karakoulakis@gmail.com>
 *
 * Permission to use, copy, modify, and distribute this software for any
 * purpose with or without fee is hereby granted, provided that the above
@@ -28,16 +28,15 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 param  = info[1]->ToNumber()->Value();
-		int32 value  = info[2]->ToNumber()->Value();
-
+		CheckMinArgs(3, "nodeid, param, value");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		uint8 param  = Nan::To<Number>(info[1]).ToLocalChecked()->Value();
+		int32 value  = Nan::To<Number>(info[2]).ToLocalChecked()->Value();
 		if (info.Length() < 4) {
 			OpenZWave::Manager::Get()->SetConfigParam(homeid, nodeid, param, value);
 		}
 		else {
-			uint8 size = info[3]->ToNumber()->Value();
+			uint8 size = Nan::To<Number>(info[3]).ToLocalChecked()->Value();
 			OpenZWave::Manager::Get()->SetConfigParam(homeid, nodeid, param, value, size);
 		}
 	}
@@ -62,10 +61,9 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 param = info[1]->ToNumber()->Value();
-
+		CheckMinArgs(2, "nodeid, param");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		uint8 param = Nan::To<Number>(info[1]).ToLocalChecked()->Value();
 		OpenZWave::Manager::Get()->RequestConfigParam(homeid, nodeid, param);
 	}
 
@@ -79,10 +77,9 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
-
-	  	OpenZWave::Manager::Get()->RequestAllConfigParams (homeid, nodeid);
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		OpenZWave::Manager::Get()->RequestAllConfigParams (homeid, nodeid);
 	}
 
 }

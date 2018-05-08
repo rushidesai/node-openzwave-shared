@@ -1,6 +1,7 @@
 node-openzwave-shared
 =====================
-
+[Linux![Linux Build Status](https://travis-ci.org/OpenZWave/node-openzwave-shared.svg?branch=master)](https://travis-ci.org/OpenZWave/node-openzwave-shared)
+[Windows![Windows Build status](https://ci.appveyor.com/api/projects/status/txg360huomtpgc8o?svg=true)](https://ci.appveyor.com/project/ekarak/node-openzwave-shared)
 [![Join the chat at https://gitter.im/OpenZWave/node-openzwave-shared](https://badges.gitter.im/OpenZWave/node-openzwave-shared.svg)](https://gitter.im/OpenZWave/node-openzwave-shared?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This is the homepage for *node-openzwave-shared*, the official binary add-on for
@@ -32,6 +33,14 @@ This addon is currently able to:
 - *perform* management tasks (add/remove nodes, replace failed nodes, manage
 	their group associations etc)
 
+**API change notice (v1.4.0)**
+`enablePoll()` and `disablePoll()` used to affect *only the first ValueID of any given command class*.
+This is *wrong*, as for multi-instance devices you probably need to poll multiple ValueID's.
+These calls now accept a valueId, in very much the same way as `setValue()` does. This means that
+you now have to pass a valueID object (or its 4 constituents) for each value you want to enable/disable
+polling for.
+
+
 **Important notice**
 
 This library differs from its [ancestor library](https://github.com/jperkin/node-openzwave)
@@ -61,7 +70,7 @@ installed first. You can do this one of two ways.
 ([latest code from GitHub](https://github.com/OpenZWave/open-zwave/archive/master.zip) or
 [a stable release](https://github.com/OpenZWave/open-zwave/releases)) or
 from [the OpenZWave snapshots repository](http://old.openzwave.com/snapshots/)
-and then 2) compiling it and installing on your system (`make && sudo make install`)
+and then 2) compiling it and installing on your system (`make && sudo make install && sudo ldconfig`)
 
 - You could also install OpenZWave via a [precompiled package that's suitable for
 your Linux distribution and architecture](http://old.openzwave.com/downloads/).
@@ -79,11 +88,39 @@ or you could try installing OpenZWave using `brew install open-zwave`.
 Since there is no standard installation location for Open Z-Wave on Windows, it
 will be automatically downloaded, compiled, and installed when you install this module.
 
-## Installation
+## Installation and test script
 
 Whenever you have OpenZWave installed in your machine, then all you need to do is:
+
 ```
 $ npm install openzwave-shared
+```
+
+To try it out, boot up NodeJS, and use the `.load` shell helper function to boot up a basic OpenZWave CLI. This will initialise and expose 1) a `zwave` object that you can use to send commands and 2) the `nodes` object to get a list of all nodes:
+
+```js
+$ node
+> .load test2.js
+...
+...
+
+// the 1st node is the USB controller stick
+> console.log(nodes[1])
+{ manufacturer: 'Aeotec',
+  manufacturerid: '0x0086',
+  product: 'Z-Stick S2',
+  producttype: '0x0002',
+  productid: '0x0001',
+  type: 'Static PC Controller',
+  name: '',
+  loc: '',
+  classes: { '32': { '0': [Object] } },
+  ready: true }
+
+// set dimmer (node 5) to 50%
+> zwave.setValue(5,38,1,0,50);
+undefined
+> node5: changed: 38:Level:54->54
 ```
 
 **Notice 1:** If you receive the error `cannot find -lopenzwave` on a 64-bit Linux

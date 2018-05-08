@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2013 Jonathan Perkin <jonathan@perkin.org.uk>
-* Copyright (c) 2015-1016 Elias Karakoulakis <elias.karakoulakis@gmail.com>
+* Copyright (c) 2015-2017 Elias Karakoulakis <elias.karakoulakis@gmail.com>
 *
 * Permission to use, copy, modify, and distribute this software for any
 * purpose with or without fee is hereby granted, provided that the above
@@ -32,10 +32,9 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
+		CheckMinArgs(1, "nodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
 		uint8 numGroups = OpenZWave::Manager::Get()->GetNumGroups(homeid, nodeid);
-
 		info.GetReturnValue().Set(Nan::New<Integer>(numGroups));
 	}
 
@@ -47,11 +46,10 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
+		CheckMinArgs(2, "nodeid, groupidx");
 		uint8* associations;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 groupidx = info[1]->ToNumber()->Value();
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		uint8 groupidx = Nan::To<Number>(info[1]).ToLocalChecked()->Value();
 
 		uint32 numNodes = OpenZWave::Manager::Get()->GetAssociations(
 			homeid, nodeid,	groupidx, &associations
@@ -62,10 +60,10 @@ namespace OZW {
 		for (uint8 nr = 0; nr < numNodes; nr++) {
 			o_assocs->Set(Nan::New<Integer>(nr), Nan::New<Integer>(associations[nr]));
 		}
-
-		// The caller is responsible for freeing the array memory
-		// with a call to delete [].
-		delete associations;
+		if (numNodes > 0) {
+			// The caller is responsible for freeing the array memory with a call to delete [].
+			delete associations;
+		}
 
 		info.GetReturnValue().Set(o_assocs);
 	}
@@ -78,9 +76,9 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 groupidx = info[1]->ToNumber()->Value();
+		CheckMinArgs(2, "nodeid, groupidx");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		uint8 groupidx = Nan::To<Number>(info[1]).ToLocalChecked()->Value();
 
 		uint8 numMaxAssoc = OpenZWave::Manager::Get()->GetMaxAssociations(
 			homeid, nodeid,	groupidx
@@ -97,9 +95,9 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 groupidx = info[1]->ToNumber()->Value();
+		CheckMinArgs(2, "nodeid, groupidx");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		uint8 groupidx = Nan::To<Number>(info[1]).ToLocalChecked()->Value();
 
 		std::string groupLabel = OpenZWave::Manager::Get()->GetGroupLabel(
 			homeid, nodeid, groupidx
@@ -119,10 +117,10 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 groupidx = info[1]->ToNumber()->Value();
-		uint8 tgtnodeid = info[2]->ToNumber()->Value();
+		CheckMinArgs(3, "nodeid, groupidx, tgtnodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		uint8 groupidx = Nan::To<Number>(info[1]).ToLocalChecked()->Value();
+		uint8 tgtnodeid = Nan::To<Number>(info[2]).ToLocalChecked()->Value();
 
 		OpenZWave::Manager::Get()->AddAssociation(
 			homeid,nodeid,groupidx,tgtnodeid
@@ -137,10 +135,10 @@ namespace OZW {
 	// ===================================================================
 	{
 		Nan::HandleScope scope;
-
-		uint8 nodeid = info[0]->ToNumber()->Value();
-		uint8 groupidx = info[1]->ToNumber()->Value();
-		uint8 tgtnodeid = info[2]->ToNumber()->Value();
+		CheckMinArgs(3, "nodeid, groupidx, tgtnodeid");
+		uint8 nodeid = Nan::To<Number>(info[0]).ToLocalChecked()->Value();
+		uint8 groupidx = Nan::To<Number>(info[1]).ToLocalChecked()->Value();
+		uint8 tgtnodeid = Nan::To<Number>(info[2]).ToLocalChecked()->Value();
 
 		OpenZWave::Manager::Get()->RemoveAssociation(homeid,nodeid,groupidx,tgtnodeid);
 	}

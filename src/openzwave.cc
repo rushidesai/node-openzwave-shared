@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2013 Jonathan Perkin <jonathan@perkin.org.uk>
-* Copyright (c) 2015-1016 Elias Karakoulakis <elias.karakoulakis@gmail.com>
+* Copyright (c) 2015-2017 Elias Karakoulakis <elias.karakoulakis@gmail.com>
 *
 * Permission to use, copy, modify, and distribute this software for any
 * purpose with or without fee is hereby granted, provided that the above
@@ -28,7 +28,7 @@ namespace OZW {
 	CommandMap* ctrlCmdNames;
 
 	std::string ozw_userpath;
-	const std::string ozw_config_path  = stringify( OPENZWAVE_ETC );
+	std::string ozw_config_path  = stringify( OPENZWAVE_ETC );
 
 	// ===================================================================
 	extern "C" void init(Handle<Object> target, Handle<Object> module) {
@@ -59,7 +59,7 @@ namespace OZW {
 		Nan::SetPrototypeMethod(t, "setConfigParam", OZW::SetConfigParam);
 		Nan::SetPrototypeMethod(t, "requestConfigParam", OZW::RequestConfigParam);
 		Nan::SetPrototypeMethod(t, "requestAllConfigParams", OZW::RequestAllConfigParams);
-		// openzwave-controller.cc
+		// openzwave-driver.cc
 		Nan::SetPrototypeMethod(t, "hardReset", OZW::HardReset);
 		Nan::SetPrototypeMethod(t, "softReset", OZW::SoftReset);
 		Nan::SetPrototypeMethod(t, "getControllerNodeId", OZW::GetControllerNodeId); // ** new
@@ -70,7 +70,6 @@ namespace OZW {
 		Nan::SetPrototypeMethod(t, "getLibraryVersion", OZW::GetLibraryVersion); // ** new
 		Nan::SetPrototypeMethod(t, "getLibraryTypeName", OZW::GetLibraryTypeName); // ** new
 		Nan::SetPrototypeMethod(t, "getSendQueueCount", OZW::GetSendQueueCount);	// ** new
-		// openzwave-driver.cc
 		Nan::SetPrototypeMethod(t, "connect", OZW::Connect);
 		Nan::SetPrototypeMethod(t, "disconnect", OZW::Disconnect);
 		// openzwave-groups.cc
@@ -117,6 +116,7 @@ namespace OZW {
 		Nan::SetPrototypeMethod(t, "switchAllOn", OZW::SwitchAllOn);
 		Nan::SetPrototypeMethod(t, "switchAllOff", OZW::SwitchAllOff);
 		Nan::SetPrototypeMethod(t, "pressButton", OZW::PressButton);
+		Nan::SetPrototypeMethod(t, "releaseButton", OZW::ReleaseButton);
 		//
 		Nan::SetPrototypeMethod(t, "refreshNodeInfo", OZW::RefreshNodeInfo); // ** new
 		Nan::SetPrototypeMethod(t, "requestNodeState", OZW::RequestNodeState); // ** new
@@ -149,6 +149,7 @@ namespace OZW {
 		Nan::SetPrototypeMethod(t, "isNodeSecurityDevice", OZW::IsNodeSecurityDevice); // ** new
 		// openzwave-values.cc
 		Nan::SetPrototypeMethod(t, "setValue", OZW::SetValue);
+		Nan::SetPrototypeMethod(t, "setValueLabel", OZW::SetValueLabel);
 		Nan::SetPrototypeMethod(t, "refreshValue", OZW::RefreshValue);
 		Nan::SetPrototypeMethod(t, "setChangeVerified", OZW::SetChangeVerified);
 		Nan::SetPrototypeMethod(t, "getNumSwitchPoints", OZW::GetNumSwitchPoints);
@@ -210,7 +211,7 @@ namespace OZW {
 		std::string option_overrides;
 		// Options are global for all drivers and can only be set once.
 		if (info.Length() > 0) {
-			Local < Object > opts = info[0]->ToObject();
+			Local < Object > opts = Nan::To<Object>(info[0]).ToLocalChecked();
 			Local < Array > props = Nan::GetOwnPropertyNames(opts).ToLocalChecked();
 			for (unsigned int i = 0; i < props->Length(); ++i) {
 				Local<Value> key       = props->Get(i);
@@ -221,6 +222,8 @@ namespace OZW {
 				// scan for OpenZWave options.xml in the nodeJS module's '/config' subdirectory
 				if (keyname == "UserPath") {
 					ozw_userpath.assign(argvalstr);
+				} else if (keyname == "ConfigPath") {
+					ozw_config_path.assign(argvalstr);
 				} else {
 					option_overrides += " --" + keyname + " " + argvalstr;
 				}
@@ -247,6 +250,8 @@ namespace OZW {
 		self->config_path = ozw_config_path;
 		self->userpath = ozw_userpath;
 		self->option_overrides = option_overrides;
+
+		ctx_obj = Nan::Persistent<Object>(info.This());
 
 		//
 		info.GetReturnValue().Set(info.This());
